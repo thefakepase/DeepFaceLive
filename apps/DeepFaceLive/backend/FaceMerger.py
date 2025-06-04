@@ -1,4 +1,5 @@
 import time
+import os
 
 import cv2
 import numexpr as ne
@@ -27,6 +28,14 @@ class FaceMerger(BackendHost):
     def get_control_sheet(self) -> 'Sheet.Host': return super().get_control_sheet()
 
 class FaceMergerWorker(BackendWorker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        env_limit = os.getenv('DFL_FACE_MERGER_MEM_MB')
+        try:
+            self.memory_limit_mb = int(env_limit) if env_limit is not None else 512
+        except ValueError:
+            self.memory_limit_mb = 512
+
     def get_state(self) -> 'WorkerState': return super().get_state()
     def get_control_sheet(self) -> 'Sheet.Worker': return super().get_control_sheet()
 
@@ -42,6 +51,7 @@ class FaceMergerWorker(BackendWorker):
 
         state, cs = self.get_state(), self.get_control_sheet()
         cs.device.call_on_selected(self.on_cs_device)
+        cs.memory_limit_mb.call_on_number(self.on_cs_memory_limit_mb)
         cs.face_x_offset.call_on_number(self.on_cs_face_x_offset)
         cs.face_y_offset.call_on_number(self.on_cs_face_y_offset)
         cs.face_scale.call_on_number(self.on_cs_face_scale)
@@ -61,12 +71,21 @@ class FaceMergerWorker(BackendWorker):
         cs.device.set_choices( ['CPU'] + lib_cl.get_available_devices_info(), none_choice_name='@misc.menu_select')
         cs.device.select(state.device if state.device is not None else 'CPU')
 
+        if state.memory_limit_mb is None:
+            state.memory_limit_mb = self.memory_limit_mb
+        else:
+            self.memory_limit_mb = state.memory_limit_mb
+
+        cs.memory_limit_mb.enable()
+        cs.memory_limit_mb.set_config(lib_csw.Number.Config(min=128, max=8192, step=64, decimals=0, allow_instant_update=True))
+        cs.memory_limit_mb.set_number(state.memory_limit_mb)
+
     def on_cs_device(self, idxs, device : lib_cl.DeviceInfo):
         state, cs = self.get_state(), self.get_control_sheet()
         if device is not None and state.device == device:
             if device != 'CPU':
                 dev = lib_cl.get_device(device)
-                dev.set_target_memory_usage(mb=512)
+                dev.set_target_memory_usage(mb=self.memory_limit_mb)
                 lib_cl.set_default_device(dev)
 
             cs.face_x_offset.enable()
@@ -117,6 +136,17 @@ class FaceMergerWorker(BackendWorker):
             state.device = device
             self.save_state()
             self.restart()
+
+    def on_cs_memory_limit_mb(self, memory_limit_mb):
+        state, cs = self.get_state(), self.get_control_sheet()
+        cfg = cs.memory_limit_mb.get_config()
+        memory_limit_mb = int(np.clip(memory_limit_mb, cfg.min, cfg.max))
+        state.memory_limit_mb = self.memory_limit_mb = memory_limit_mb
+        cs.memory_limit_mb.set_number(memory_limit_mb)
+        self.save_state()
+        if state.device and state.device != 'CPU':
+            dev = lib_cl.get_device(state.device)
+            dev.set_target_memory_usage(mb=memory_limit_mb)
 
     def on_cs_face_x_offset(self, face_x_offset):
         state, cs = self.get_state(), self.get_control_sheet()
@@ -379,6 +409,7 @@ class Sheet:
         def __init__(self):
             super().__init__()
             self.device = lib_csw.DynamicSingleSwitch.Client()
+            self.memory_limit_mb = lib_csw.Number.Client()
             self.face_x_offset = lib_csw.Number.Client()
             self.face_y_offset = lib_csw.Number.Client()
             self.face_scale = lib_csw.Number.Client()
@@ -400,6 +431,7 @@ class Sheet:
         def __init__(self):
             super().__init__()
             self.device = lib_csw.DynamicSingleSwitch.Host()
+            self.memory_limit_mb = lib_csw.Number.Host()
             self.face_x_offset = lib_csw.Number.Host()
             self.face_y_offset = lib_csw.Number.Host()
             self.face_scale = lib_csw.Number.Host()
@@ -417,6 +449,7 @@ class Sheet:
 
 class WorkerState(BackendWorkerState):
     device : lib_cl.DeviceInfo = None
+    memory_limit_mb : int = None
     face_x_offset : float = None
     face_y_offset : float = None
     face_scale : float = None
