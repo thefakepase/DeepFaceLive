@@ -318,6 +318,11 @@ Frequently asked questions
 
 <a href="doc/developer_faq/developer_faq.md">for Developer</a>
 </td></tr>
+<tr><td align="right">
+Environment variables
+</td><td align="left">
+<code>DFL_FACE_MERGER_MEM_MB</code> &mdash; set GPU memory limit for FaceMerger (in MB)
+</td></tr>
 <tr><td colspan=2 align="center">
 
 ## Releases

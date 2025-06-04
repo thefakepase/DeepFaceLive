@@ -1060,6 +1060,15 @@ class Localization:
                 'ja-JP' : '色圧縮',
                 'de-DE' : 'Farbkompression'},
 
+    'QFaceMerger.memory_limit_mb':{
+                'en-US' : 'GPU memory limit, MB',
+                'ru-RU' : 'Лимит памяти ГП, МБ',
+                'zh-CN' : 'GPU 内存限制，MB',
+                'es-ES' : 'Límite de memoria GPU, MB',
+                'it-IT' : 'Limite memoria GPU, MB',
+                'ja-JP' : 'GPU メモリ上限 (MB)',
+                'de-DE' : 'GPU Speicherlimit, MB'},
+
     'QFaceMerger.face_opacity':{
                 'en-US' : 'Face opacity',
                 'ru-RU' : 'Непрозрач. лица',

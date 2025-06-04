@@ -17,6 +17,9 @@ class QFaceMerger(QBackendPanel):
         q_device_label = QLabelPopupInfo(label=L('@common.device'), popup_info_text=L('@common.help.device'))
         q_device       = QComboBoxCSWDynamicSingleSwitch(cs.device, reflect_state_widgets=[q_device_label])
 
+        q_memory_limit_label = QLabelPopupInfo(label=L('@QFaceMerger.memory_limit_mb'))
+        q_memory_limit       = QSpinBoxCSWNumber(cs.memory_limit_mb, reflect_state_widgets=[q_memory_limit_label])
+
         q_face_x_offset_label = QLabelPopupInfo(label=L('@QFaceMerger.face_x_offset'))
         q_face_x_offset       = QSpinBoxCSWNumber(cs.face_x_offset, reflect_state_widgets=[q_face_x_offset_label])
 
@@ -56,6 +59,9 @@ class QFaceMerger(QBackendPanel):
         row = 0
         grid_l.addWidget(q_device_label, row, 0, alignment=qtx.AlignRight | qtx.AlignVCenter)
         grid_l.addWidget(q_device, row, 1, alignment=qtx.AlignLeft )
+        row += 1
+        grid_l.addWidget(q_memory_limit_label, row, 0, alignment=qtx.AlignRight | qtx.AlignVCenter)
+        grid_l.addWidget(q_memory_limit, row, 1, alignment=qtx.AlignLeft )
         row += 1
         grid_l.addLayout( qtx.QXVBoxLayout([q_face_x_offset_label, q_face_y_offset_label]), row, 0, alignment=qtx.AlignRight | qtx.AlignVCenter)
         grid_l.addLayout( qtx.QXHBoxLayout([q_face_x_offset, q_face_y_offset]), row, 1, alignment=qtx.AlignLeft )
